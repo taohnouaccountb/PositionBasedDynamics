@@ -129,6 +129,8 @@ void timeStep ()
 		return;
 
 	// Simulation code
+	auto currentTime = TimeManager::getCurrent()->getTime();
+
 	SimulationModel *model = Simulation::getCurrent()->getModel();
 	const unsigned int numSteps = base->getValue<unsigned int>(DemoBase::NUM_STEPS_PER_RENDER);
 	for (unsigned int i = 0; i < numSteps; i++)
@@ -142,6 +144,27 @@ void timeStep ()
 	{
 		model->getTetModels()[i]->updateMeshNormals(model->getParticles());
 	} 	
+
+	ParticleData &pd = model->getParticles();
+	if (currentTime > 5)
+	for (unsigned int i = 0; i < 1; i++)
+	{
+		for (unsigned int j = 0; j < height; j++)
+		{
+			for (unsigned int k = 0; k < depth; k++){
+				unsigned int idx = i*height*depth + j*depth + k;
+				auto old_pos = pd.getPosition(idx);
+				auto new_pos = old_pos;
+				new_pos[0] = 5;
+				std::cout << old_pos[0] << ' ' << new_pos[0] << std::endl;
+				pd.setPosition(idx, new_pos);
+			}
+		}
+	}
+	auto _x = pd.getPosition(0);
+	// auto _d = Vector3r(1, 0, 0);
+	// _x += _d;
+	// std::cout << _x[0] << ' ' << _x[1] << ' ' << _x[2] << std::endl;
 }
 
 void buildModel ()
