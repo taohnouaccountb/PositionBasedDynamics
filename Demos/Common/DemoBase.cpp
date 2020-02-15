@@ -39,7 +39,7 @@ DemoBase::DemoBase()
 	Utilities::logger.addSink(unique_ptr<Utilities::ConsoleSink>(new Utilities::ConsoleSink(Utilities::LogLevel::INFO)));
 
 	m_sceneLoader = nullptr;
-	m_numberOfStepsPerRenderUpdate = 8;
+	m_numberOfStepsPerRenderUpdate = 5;
 	m_renderContacts = false;
 	m_renderAABB = false;
 	m_renderSDF = false;
