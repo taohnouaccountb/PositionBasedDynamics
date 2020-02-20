@@ -31,10 +31,11 @@ void read_binary(const std::string filename, Matrix &matrix)
 class TrajectoryData
 {
 public:
-    TrajectoryData(std::vector<Eigen::Isometry3d> _transformations, Eigen::VectorXd _dt_inv)
+    TrajectoryData(std::vector<Eigen::Isometry3d> _transforms, Eigen::VectorXd _dt_inv)
     {
-        transformations = _transformations;
+        transforms = _transforms;
         dt_inv = _dt_inv;
+        assert(dt_inv.cols() == transforms.size());
     }
 
     TrajectoryData(std::string path_prefix)
@@ -42,17 +43,17 @@ public:
         // Read trajectory from directory
         const int num_rows = 30;
 
-        transformations.resize(num_rows);
+        transforms.resize(num_rows);
         for (int i = 0; i < num_rows; i++)
         {
             // std::cout << i << std::endl;
-            Eigen::read_binary(path_prefix + std::to_string(i) + ".dat", transformations[i].matrix());
+            Eigen::read_binary(path_prefix + std::to_string(i) + ".dat", transforms[i].matrix());
             // std::cout<<transformations[i].translation()<<std::endl;
         }
 
         Eigen::read_binary(path_prefix + "dt.dat", dt_inv);
         // std::cout << dt_inv << std::endl;
-        assert(dt_inv.cols() == transformations.size());
+        assert(dt_inv.cols() == transforms.size());
     }
 
     void step(Real currentTime)
@@ -63,7 +64,7 @@ public:
 
         std::cout << "STEP:" << idx << "/" << dt_inv.size() << std::endl;
         std::cout << "CUR:" << currentTime << " NEXT:" << nextUpdateTime << std::endl;
-        std::cout << transformations[idx].translation() << std::endl
+        std::cout << transforms[idx].translation() << std::endl
                   << std::endl;
     }
 
@@ -75,7 +76,7 @@ public:
     void transform(Vector3r &pos)
     {
         assert(idx < dt_inv.size());
-        pos = transformations[idx] * pos;
+        pos = transforms[idx] * pos;
     }
 
     void reset()
@@ -84,7 +85,7 @@ public:
         nextUpdateTime = 0;
     }
 
-    std::vector<Eigen::Isometry3d> transformations;
+    std::vector<Eigen::Isometry3d> transforms;
     Eigen::VectorXd dt_inv;
 
 private:
