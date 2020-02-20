@@ -118,7 +118,7 @@ void updatePositions(SimulationModel *model)
 	return;
 }
 
-void getPosition()
+Vector3r getPosition()
 {
 	// get the current position of the target point (0, -h/2, d)
 	SimulationModel *model = Simulation::getCurrent()->getModel();
@@ -131,8 +131,7 @@ void getPosition()
 	ParticleData &pd = model->getParticles();
 	Vector3r targetPosition = pd.getPosition(targetIdx);
 	std::cout << "TARGET COORDINATE: " << targetPosition[0] << " " << targetPosition[1] << " " << targetPosition[2] << std::endl;
-	return ;
-	// return targetPosition;
+	return targetPosition;
 }
 
 // main
@@ -156,7 +155,7 @@ int main(int argc, char **argv)
 	// OpenGL
 	MiniGL::setClientIdleFunc(50, timeStep);
 	MiniGL::setKeyFunc(0, 'r', reset);
-	MiniGL::setKeyFunc(1, 'p', getPosition);
+	MiniGL::setKeyFunc(1, 'p', [&](){getPosition();});
 	MiniGL::setClientSceneFunc(render);
 	MiniGL::setViewport(40.0f, 0.1f, 500.0f, Vector3r(5.0, 10.0, 30.0), Vector3r(5.0, 0.0, 0.0));
 
