@@ -35,7 +35,7 @@ public:
     {
         transforms = _transforms;
         dt_inv = _dt_inv;
-        assert(dt_inv.cols() == transforms.size());
+        assert(dt_inv.size() == transforms.size());
     }
 
     TrajectoryData(std::string path_prefix)
@@ -53,7 +53,7 @@ public:
 
         Eigen::read_binary(path_prefix + "dt.dat", dt_inv);
         // std::cout << dt_inv << std::endl;
-        assert(dt_inv.cols() == transforms.size());
+        assert(dt_inv.size() == transforms.size());
     }
 
     void step(Real currentTime)
@@ -73,10 +73,17 @@ public:
         return currentTime >= nextUpdateTime;
     }
 
+    bool finished() { return idx>=dt_inv.size(); }
+
     void transform(Vector3r &pos)
     {
         assert(idx < dt_inv.size());
         pos = transforms[idx] * pos;
+    }
+
+    Eigen::Isometry3d getLastTransform()
+    {
+        return transforms[dt_inv.size()-1];
     }
 
     void reset()

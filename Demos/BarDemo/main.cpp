@@ -1,23 +1,14 @@
 #include "Common/Common.h"
-#include "Demos/Visualization/MiniGL.h"
-#include "Demos/Visualization/Selection.h"
-#include "GL/glut.h"
 #include "Simulation/TimeManager.h"
 #include <Eigen/Dense>
 #include "Simulation/SimulationModel.h"
 #include "Simulation/TimeStepController.h"
-#include <iostream>
-#include "Demos/Visualization/Visualization.h"
 #include "Utils/Logger.h"
 #include "Utils/Timing.h"
 #include "Utils/FileSystem.h"
-#include "Demos/Common/DemoBase.h"
-#include "Demos/Common/TweakBarParameters.h"
 #include "Simulation/Simulation.h"
 
 #include "helpers.hpp"
-
-TrajectoryData trajServer("../Demos/BarDemo/example_traj_data/");
 
 // Enable memory leak detection
 #if defined(_DEBUG) && !defined(EIGEN_ALIGN)
@@ -34,19 +25,8 @@ void timeStep();
 void buildModel();
 void createMesh();
 void render();
-void reset();
-void TW_CALL setStiffness(const void *value, void *clientData);
-void TW_CALL getStiffness(void *value, void *clientData);
-void TW_CALL setPoissonRatio(const void *value, void *clientData);
-void TW_CALL getPoissonRatio(void *value, void *clientData);
-void TW_CALL setNormalizeStretch(const void *value, void *clientData);
-void TW_CALL getNormalizeStretch(void *value, void *clientData);
-void TW_CALL setNormalizeShear(const void *value, void *clientData);
-void TW_CALL getNormalizeShear(void *value, void *clientData);
-void TW_CALL setSimulationMethod(const void *value, void *clientData);
-void TW_CALL getSimulationMethod(void *value, void *clientData);
+void reset(TrajectoryData*);
 
-DemoBase *base;
 const unsigned int width = 10;
 const unsigned int height = 10;
 const unsigned int depth = 50;
@@ -63,7 +43,7 @@ const unsigned int c_depth = 1;
 
 short simulationMethod = 2;
 
-void initPositions(SimulationModel *model)
+void initPositions(TrajectoryData *trajServer, SimulationModel *model)
 {
 	// initial all particles to the initial pose
 	ParticleData &pd = model->getParticles();
@@ -77,7 +57,7 @@ void initPositions(SimulationModel *model)
 				unsigned int idx = i * height * depth + j * depth + k;
 				auto init_pos = pd.getPosition0(idx);
 				Vector3r new_pos = init_pos;
-				trajServer.transform(new_pos);
+				trajServer->transform(new_pos);
 				if (i == 0 && j == 0)
 				{
 					// std::cout << init_pos << std::endl;
@@ -91,13 +71,13 @@ void initPositions(SimulationModel *model)
 	}
 }
 
-void updatePositions(SimulationModel *model)
+bool updatePositions(TrajectoryData *trajServer, SimulationModel *model)
 {
 	// update static particles according to the trajectory
 	ParticleData &pd = model->getParticles();
 	auto currentTime = TimeManager::getCurrent()->getTime();
 
-	if (trajServer.needUpdate(currentTime))
+	if (trajServer->needUpdate(currentTime))
 	{
 		for (unsigned int i = 0; i < c_width; i++)
 		{
@@ -108,129 +88,97 @@ void updatePositions(SimulationModel *model)
 					unsigned int idx = i * height * depth + j * depth + k;
 					auto init_pos = pd.getPosition0(idx);
 					Vector3r new_pos = init_pos;
-					trajServer.transform(new_pos);
+					trajServer->transform(new_pos);
 					pd.setPosition(idx, new_pos);
 				}
 			}
 		}
-		trajServer.step(currentTime);
+		trajServer->step(currentTime);
+		return true;
 	}
-	return;
+	else
+	{
+		return false;
+	}
 }
 
-Vector3r getPosition()
+Vector3r getPosition(SimulationModel* model, TrajectoryData *trajServer)
 {
 	// get the current position of the target point (0, -h/2, d)
-	SimulationModel *model = Simulation::getCurrent()->getModel();
-
 	int i = 0;
 	int j = (width - 1) / 2.0;
-	int k = depth-1;
+	int k = depth - 1;
 	int targetIdx = i * height * depth + j * depth + k;
 
 	ParticleData &pd = model->getParticles();
 	Vector3r targetPosition = pd.getPosition(targetIdx);
-	std::cout << "TARGET COORDINATE: " << targetPosition[0] << " " << targetPosition[1] << " " << targetPosition[2] << std::endl;
+	
+	// Transform back to base coordinate
+	Eigen::Isometry3d lastTransform_inv = trajServer->getLastTransform().inverse();
+	targetPosition = lastTransform_inv * targetPosition;
+
 	return targetPosition;
 }
 
-// main
-int main(int argc, char **argv)
+void sim_init(int argc, char **argv)
 {
-	REPORT_MEMORY_LEAKS
-
-	base = new DemoBase();
-	base->init(argc, argv, "Bar demo");
-
 	SimulationModel *model = new SimulationModel();
 	model->init();
 	Simulation::getCurrent()->setModel(model);
-
 	buildModel();
-
-	initParameters();
-
-	Simulation::getCurrent()->setSimulationMethodChangedCallback([&]() { reset(); initParameters(); base->getSceneLoader()->readParameterObject(Simulation::getCurrent()->getTimeStep()); });
-
-	// OpenGL
-	MiniGL::setClientIdleFunc(50, timeStep);
-	MiniGL::setKeyFunc(0, 'r', reset);
-	MiniGL::setKeyFunc(1, 'p', [&](){getPosition();});
-	MiniGL::setClientSceneFunc(render);
-	MiniGL::setViewport(40.0f, 0.1f, 500.0f, Vector3r(5.0, 10.0, 30.0), Vector3r(5.0, 0.0, 0.0));
-
-	TwType enumType2 = TwDefineEnum("SimulationMethodType", NULL, 0);
-	TwAddVarCB(MiniGL::getTweakBar(), "SimulationMethod", enumType2, setSimulationMethod, getSimulationMethod, &simulationMethod,
-			   " label='Simulation method' enum='0 {None}, 1 {Volume constraints}, 2 {FEM based PBD}, 3 {Strain based dynamics (no inversion handling)}, 4 {Shape matching (no inversion handling)}' group=Simulation");
-	TwAddVarCB(MiniGL::getTweakBar(), "Stiffness", TW_TYPE_REAL, setStiffness, getStiffness, model, " label='Stiffness'  min=0.0 step=0.1 precision=4 group='Simulation' ");
-	TwAddVarCB(MiniGL::getTweakBar(), "PoissonRatio", TW_TYPE_REAL, setPoissonRatio, getPoissonRatio, model, " label='Poisson ratio XY'  min=0.0 step=0.1 precision=4 group='Simulation' ");
-	TwAddVarCB(MiniGL::getTweakBar(), "NormalizeStretch", TW_TYPE_BOOL32, setNormalizeStretch, getNormalizeStretch, model, " label='Normalize stretch' group='Strain based dynamics' ");
-	TwAddVarCB(MiniGL::getTweakBar(), "NormalizeShear", TW_TYPE_BOOL32, setNormalizeShear, getNormalizeShear, model, " label='Normalize shear' group='Strain based dynamics' ");
-
-	glutMainLoop();
-
-	Utilities::Timing::printAverageTimes();
-	Utilities::Timing::printTimeSums();
-
-	delete Simulation::getCurrent();
-	delete base;
-	delete model;
-
-	return 0;
 }
 
-void initParameters()
+Vector3r sim_exec(std::vector<Eigen::Isometry3d> transforms, Eigen::VectorXd dt_inv)
 {
-	TwRemoveAllVars(MiniGL::getTweakBar());
-	TweakBarParameters::cleanup();
+	SimulationModel *model = Simulation::getCurrent()->getModel();
 
-	MiniGL::initTweakBarParameters();
+	TrajectoryData *trajServer = new TrajectoryData(transforms, dt_inv);
+	initPositions(trajServer, model);
 
-	TweakBarParameters::createParameterGUI();
-	TweakBarParameters::createParameterObjectGUI(base);
-	TweakBarParameters::createParameterObjectGUI(Simulation::getCurrent());
-	TweakBarParameters::createParameterObjectGUI(Simulation::getCurrent()->getModel());
-	TweakBarParameters::createParameterObjectGUI(Simulation::getCurrent()->getTimeStep());
+	reset(trajServer);
+
+	const unsigned int numStepsPerItr = 1;
+	while (!trajServer->finished())
+	{
+		for (unsigned int i=0; i< numStepsPerItr; i++)
+		{
+			START_TIMING("SimStep");
+
+			Simulation::getCurrent()->getTimeStep()->step(*model);
+			updatePositions(trajServer, model);
+
+			STOP_TIMING_AVG;
+		}
+		for (unsigned int i = 0; i < model->getTetModels().size(); i++)
+		{
+			model->getTetModels()[i]->updateMeshNormals(model->getParticles());
+		}
+	}
+	return getPosition(model, trajServer);
 }
 
-void reset()
+int main(int argc, char **argv)
 {
-	trajServer.reset();
+	sim_init(argc, argv);
+	TrajectoryData fakeInput("../Demos/BarDemo/example_traj_data/");
+	auto targetPosition = sim_exec(fakeInput.transforms, fakeInput.dt_inv);
+	// sim_exec(fakeInput.transforms, fakeInput.dt_inv);
+	// sim_exec(fakeInput.transforms, fakeInput.dt_inv);
+	// sim_exec(fakeInput.transforms, fakeInput.dt_inv);
+
+	std::cout << "TARGET COORDINATE: " << targetPosition[0] << " " << targetPosition[1] << " " << targetPosition[2] << std::endl;
+}
+
+void reset(TrajectoryData *trajServer)
+{
+	trajServer->reset();
 	Utilities::Timing::printAverageTimes();
 	Utilities::Timing::reset();
 
 	Simulation::getCurrent()->reset();
-	base->getSelectedParticles().clear();
 
 	Simulation::getCurrent()->getModel()->cleanup();
 	buildModel();
-}
-
-void timeStep()
-{
-	const Real pauseAt = base->getValue<Real>(DemoBase::PAUSE_AT);
-	if ((pauseAt > 0.0) && (pauseAt < TimeManager::getCurrent()->getTime()))
-		base->setValue(DemoBase::PAUSE, true);
-
-	if (base->getValue<bool>(DemoBase::PAUSE))
-		return;
-
-	// Simulation code
-
-	SimulationModel *model = Simulation::getCurrent()->getModel();
-	const unsigned int numSteps = base->getValue<unsigned int>(DemoBase::NUM_STEPS_PER_RENDER);
-	for (unsigned int i = 0; i < numSteps; i++)
-	{
-		START_TIMING("SimStep");
-		Simulation::getCurrent()->getTimeStep()->step(*model);
-		STOP_TIMING_AVG;
-		updatePositions(model);
-	}
-
-	for (unsigned int i = 0; i < model->getTetModels().size(); i++)
-	{
-		model->getTetModels()[i]->updateMeshNormals(model->getParticles());
-	}
 }
 
 void buildModel()
@@ -238,7 +186,6 @@ void buildModel()
 	TimeManager::getCurrent()->setTimeStepSize(static_cast<Real>(0.005));
 
 	createMesh();
-	initPositions(Simulation::getCurrent()->getModel());
 }
 
 void createMesh()
@@ -422,67 +369,5 @@ void createMesh()
 
 	LOG_INFO << "Number of tets: " << indices.size() / 4;
 	LOG_INFO << "Number of vertices: " << width * height * depth;
-}
-
-void render()
-{
-	base->render();
-}
-
-// Hooks
-
-void TW_CALL setStiffness(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((SimulationModel *)clientData)->setValue<Real>(SimulationModel::SOLID_STIFFNESS, val);
-}
-
-void TW_CALL getStiffness(void *value, void *clientData)
-{
-	*(Real *)(value) = ((SimulationModel *)clientData)->getValue<Real>(SimulationModel::SOLID_STIFFNESS);
-}
-
-void TW_CALL setPoissonRatio(const void *value, void *clientData)
-{
-	const Real val = *(const Real *)(value);
-	((SimulationModel *)clientData)->setValue<Real>(SimulationModel::SOLID_POISSON_RATIO, val);
-}
-
-void TW_CALL getPoissonRatio(void *value, void *clientData)
-{
-	*(Real *)(value) = ((SimulationModel *)clientData)->getValue<Real>(SimulationModel::SOLID_POISSON_RATIO);
-}
-
-void TW_CALL setNormalizeStretch(const void *value, void *clientData)
-{
-	const bool val = *(const bool *)(value);
-	((SimulationModel *)clientData)->setValue<Real>(SimulationModel::SOLID_NORMALIZE_STRETCH, val);
-}
-
-void TW_CALL getNormalizeStretch(void *value, void *clientData)
-{
-	*(bool *)(value) = ((SimulationModel *)clientData)->getValue<Real>(SimulationModel::SOLID_NORMALIZE_STRETCH);
-}
-
-void TW_CALL setNormalizeShear(const void *value, void *clientData)
-{
-	const bool val = *(const bool *)(value);
-	((SimulationModel *)clientData)->setValue<Real>(SimulationModel::SOLID_NORMALIZE_SHEAR, val);
-}
-
-void TW_CALL getNormalizeShear(void *value, void *clientData)
-{
-	*(bool *)(value) = ((SimulationModel *)clientData)->getValue<Real>(SimulationModel::SOLID_NORMALIZE_SHEAR);
-}
-
-void TW_CALL setSimulationMethod(const void *value, void *clientData)
-{
-	const short val = *(const short *)(value);
-	*((short *)clientData) = val;
-	reset();
-}
-
-void TW_CALL getSimulationMethod(void *value, void *clientData)
-{
-	*(short *)(value) = *((short *)clientData);
+	LOG_INFO << "Finished creating the msh";
 }
