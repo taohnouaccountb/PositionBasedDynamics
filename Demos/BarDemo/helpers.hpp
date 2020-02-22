@@ -31,10 +31,16 @@ void read_binary(const std::string filename, Matrix &matrix)
 class TrajectoryData
 {
 public:
-    TrajectoryData(std::vector<Eigen::Isometry3d> _transforms, Eigen::VectorXd _dt_inv)
+    TrajectoryData(const std::vector<Eigen::Isometry3d> *_transforms, const Eigen::VectorXd *_dt_inv)
     {
-        transforms = _transforms;
-        dt_inv = _dt_inv;
+        transforms.resize(_transforms->size());
+        for (int i=0; i<_transforms->size(); i++)
+        {
+            Eigen::Isometry3d &t = transforms[i];
+            t.linear() = _transforms->at(i).linear();
+            t.translation() = _transforms->at(i).translation();
+        }
+        dt_inv = *_dt_inv;
         assert(dt_inv.size() == transforms.size());
     }
 

@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 project(PositionBasedDynamics)
 
 # ignore eigen errors
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-ignored-attributes")
-# SET( CMAKE_BUILD_TYPE Debug )
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-ignored-attributes -Wmaybe-uninitialized")
+set(CMAKE_BUILD_TYPE Release)
 
 set(PROJECT_PATH ${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
@@ -31,9 +31,6 @@ set(EigenDir "${CMAKE_SOURCE_DIR}/extern/eigen")
 
 
 set(EXT_CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE})
-if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-	set(EXT_CMAKE_BUILD_TYPE "Release")
-endif()
 
 ## Discregrid
 if ((DEFINED Discregrid_INCLUDE_DIR) AND (DEFINED Discregrid_DEBUG_LIB) AND (DEFINED Discregrid_LIB))

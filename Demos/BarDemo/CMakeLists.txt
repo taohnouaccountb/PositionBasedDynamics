@@ -1,20 +1,10 @@
-set(SIMULATION_LINK_LIBRARIES AntTweakBar glew PositionBasedDynamics Simulation Utils)
-set(SIMULATION_DEPENDENCIES AntTweakBar glew PositionBasedDynamics Simulation Utils)
+set(SIMULATION_LINK_LIBRARIES PositionBasedDynamics Simulation Utils)
+set(SIMULATION_DEPENDENCIES PositionBasedDynamics Simulation Utils)
 
-if(WIN32)
-  set(SIMULATION_LINK_LIBRARIES freeglut opengl32.lib glu32.lib ${SIMULATION_LINK_LIBRARIES})
-  set(SIMULATION_DEPENDENCIES freeglut ${SIMULATION_DEPENDENCIES})
-else()
-  set(OpenGL_GL_PREFERENCE GLVND)
-  find_package(GLUT REQUIRED)
-  find_package(OpenGL REQUIRED)
 
-  set(SIMULATION_LINK_LIBRARIES
-    ${SIMULATION_LINK_LIBRARIES}
-    ${GLUT_LIBRARIES}
-    ${OPENGL_LIBRARIES}
-  )
-endif()
+set(SIMULATION_LINK_LIBRARIES
+  ${SIMULATION_LINK_LIBRARIES}
+)
 
 ############################################################
 # GenericParameters
@@ -25,25 +15,19 @@ if(TARGET Ext_GenericParameters)
 endif()
 
 add_executable(BarDemo
-	  main.cpp
-
-	  ../Common/TweakBarParameters.cpp
-	  ../Common/TweakBarParameters.h
-	  ../Common/DemoBase.cpp
-	  ../Common/DemoBase.h
-	    
-	  ${VIS_FILES}          
-	  ${PROJECT_PATH}/Common/Common.h
+	  main.cpp     
+    # ${VIZ_FILES}
+    ${PROJECT_PATH}/Common/Common.h
 	  
 	  CMakeLists.txt
 )
 
-add_definitions(-DTW_NO_LIB_PRAGMA -DTW_STATIC -DFREEGLUT_LIB_PRAGMAS=0)
+add_definitions(-DTW_NO_LIB_PRAGMA -DTW_STATIC)
 
 find_package( Eigen3 REQUIRED )
 include_directories( ${EIGEN3_INCLUDE_DIR} )
-include_directories(${PROJECT_PATH}/extern/freeglut/include)
-include_directories(${PROJECT_PATH}/extern/glew/include)
+# include_directories(${PROJECT_PATH}/extern/freeglut/include)
+# include_directories(${PROJECT_PATH}/extern/glew/include)
 
 set_target_properties(BarDemo PROPERTIES FOLDER "Demos")
 set_target_properties(BarDemo PROPERTIES DEBUG_POSTFIX ${PBD_BINARY_DEBUG_POSTFIX})
@@ -51,4 +35,4 @@ set_target_properties(BarDemo PROPERTIES RELWITHDEBINFO_POSTFIX ${PBD_BINARY_REL
 set_target_properties(BarDemo PROPERTIES MINSIZEREL_POSTFIX ${PBD_BINARY_MINSIZEREL_POSTFIX})
 add_dependencies(BarDemo ${SIMULATION_DEPENDENCIES})
 target_link_libraries(BarDemo ${SIMULATION_LINK_LIBRARIES})
-VIS_SOURCE_GROUPS()
+# VIS_SOURCE_GROUPS()

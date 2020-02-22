@@ -7,6 +7,7 @@
 #include "Utils/Timing.h"
 #include "Utils/FileSystem.h"
 #include "Simulation/Simulation.h"
+#include <iostream>
 
 #include "helpers.hpp"
 
@@ -128,13 +129,15 @@ void sim_init(int argc, char **argv)
 	buildModel();
 }
 
-Vector3r sim_exec(std::vector<Eigen::Isometry3d> transforms, Eigen::VectorXd dt_inv)
+Vector3r sim_exec(const std::vector<Eigen::Isometry3d> *transforms, const Eigen::VectorXd *dt_inv)
 {
+	std::cout<<"EXEC"<<std::endl;
 	SimulationModel *model = Simulation::getCurrent()->getModel();
 
+	// TrajectoryData *trajServer = new TrajectoryData(transforms, dt_inv);
 	TrajectoryData *trajServer = new TrajectoryData(transforms, dt_inv);
-	initPositions(trajServer, model);
 
+	initPositions(trajServer, model);
 	reset(trajServer);
 
 	const unsigned int numStepsPerItr = 1;
@@ -142,12 +145,8 @@ Vector3r sim_exec(std::vector<Eigen::Isometry3d> transforms, Eigen::VectorXd dt_
 	{
 		for (unsigned int i=0; i< numStepsPerItr; i++)
 		{
-			START_TIMING("SimStep");
-
 			Simulation::getCurrent()->getTimeStep()->step(*model);
 			updatePositions(trajServer, model);
-
-			STOP_TIMING_AVG;
 		}
 		for (unsigned int i = 0; i < model->getTetModels().size(); i++)
 		{
@@ -161,7 +160,8 @@ int main(int argc, char **argv)
 {
 	sim_init(argc, argv);
 	TrajectoryData fakeInput("../Demos/BarDemo/example_traj_data/");
-	auto targetPosition = sim_exec(fakeInput.transforms, fakeInput.dt_inv);
+
+	auto targetPosition = sim_exec(&fakeInput.transforms, &fakeInput.dt_inv);
 	// sim_exec(fakeInput.transforms, fakeInput.dt_inv);
 	// sim_exec(fakeInput.transforms, fakeInput.dt_inv);
 	// sim_exec(fakeInput.transforms, fakeInput.dt_inv);
@@ -172,8 +172,6 @@ int main(int argc, char **argv)
 void reset(TrajectoryData *trajServer)
 {
 	trajServer->reset();
-	Utilities::Timing::printAverageTimes();
-	Utilities::Timing::reset();
 
 	Simulation::getCurrent()->reset();
 
@@ -367,7 +365,6 @@ void createMesh()
 		model->getTetModels()[cm]->updateMeshNormals(pd);
 	}
 
-	LOG_INFO << "Number of tets: " << indices.size() / 4;
-	LOG_INFO << "Number of vertices: " << width * height * depth;
-	LOG_INFO << "Finished creating the msh";
+	std::cout << "Number of tets: " << indices.size() / 4 << std::endl;
+	std::cout << "Number of vertices: " << width * height * depth << std::endl;
 }
