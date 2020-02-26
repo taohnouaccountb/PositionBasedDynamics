@@ -131,7 +131,7 @@ void sim_init(int argc, char **argv)
 
 Vector3r sim_exec(const std::vector<Eigen::Isometry3d> *transforms, const Eigen::VectorXd *dt_inv)
 {
-	std::cout<<"EXEC"<<std::endl;
+	std::cout<<"SIMULATING ->"<<std::endl;
 	SimulationModel *model = Simulation::getCurrent()->getModel();
 
 	// TrajectoryData *trajServer = new TrajectoryData(transforms, dt_inv);
@@ -365,6 +365,6 @@ void createMesh()
 		model->getTetModels()[cm]->updateMeshNormals(pd);
 	}
 
-	std::cout << "Number of tets: " << indices.size() / 4 << std::endl;
-	std::cout << "Number of vertices: " << width * height * depth << std::endl;
+	// std::cout << "Number of tets: " << indices.size() / 4 << std::endl;
+	// std::cout << "Number of vertices: " << width * height * depth << std::endl;
 }

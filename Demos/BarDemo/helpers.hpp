@@ -68,10 +68,10 @@ public:
         Real dt = (idx >= dt_inv.size()) ? 1e8 : 1 / dt_inv[idx];
         nextUpdateTime += dt;
 
-        std::cout << "STEP:" << idx << "/" << dt_inv.size() << std::endl;
-        std::cout << "CUR:" << currentTime << " NEXT:" << nextUpdateTime << std::endl;
-        std::cout << transforms[idx].translation() << std::endl
-                  << std::endl;
+        // std::cout << "STEP:" << idx << "/" << dt_inv.size() << std::endl;
+        // std::cout << "CUR:" << currentTime << " NEXT:" << nextUpdateTime << std::endl;
+        // std::cout << transforms[idx].translation() << std::endl
+        //           << std::endl;
     }
 
     bool needUpdate(Real currentTime)
