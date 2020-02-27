@@ -9,6 +9,7 @@
 #include "Simulation/Simulation.h"
 #include <iostream>
 
+#include "bar_sim.h"
 #include "helpers.hpp"
 
 // Enable memory leak detection
@@ -27,6 +28,7 @@ void buildModel();
 void createMesh();
 void render();
 void reset(TrajectoryData*);
+int main(int argc, char **argv);
 
 const unsigned int width = 10;
 const unsigned int height = 10;
@@ -156,15 +158,23 @@ Vector3r sim_exec(const std::vector<Eigen::Isometry3d> *transforms, const Eigen:
 	return getPosition(model, trajServer);
 }
 
+void sim_test()
+{
+	int argc = 1;
+	char *argv[1];
+	argv[0] = "./";
+	main(argc, argv);
+}
+
 int main(int argc, char **argv)
 {
 	sim_init(argc, argv);
-	TrajectoryData fakeInput("../Demos/BarDemo/example_traj_data/");
+	TrajectoryData fakeInput("/root/shared/sawyer_ws/traj/");
 
 	auto targetPosition = sim_exec(&fakeInput.transforms, &fakeInput.dt_inv);
-	// sim_exec(fakeInput.transforms, fakeInput.dt_inv);
-	// sim_exec(fakeInput.transforms, fakeInput.dt_inv);
-	// sim_exec(fakeInput.transforms, fakeInput.dt_inv);
+	sim_exec(&fakeInput.transforms, &fakeInput.dt_inv);
+	sim_exec(&fakeInput.transforms, &fakeInput.dt_inv);
+	sim_exec(&fakeInput.transforms, &fakeInput.dt_inv);
 
 	std::cout << "TARGET COORDINATE: " << targetPosition[0] << " " << targetPosition[1] << " " << targetPosition[2] << std::endl;
 }

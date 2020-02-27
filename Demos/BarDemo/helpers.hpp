@@ -53,7 +53,9 @@ public:
         for (int i = 0; i < num_rows; i++)
         {
             // std::cout << i << std::endl;
-            Eigen::read_binary(path_prefix + std::to_string(i) + ".dat", transforms[i].matrix());
+            auto filename = path_prefix + std::to_string(i) + ".dat";
+            Eigen::read_binary(filename, transforms[i].matrix());
+            // std::cout << "READ << " << filename << std::endl;
             // std::cout<<transformations[i].translation()<<std::endl;
         }
 
