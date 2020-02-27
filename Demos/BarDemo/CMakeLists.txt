@@ -2,10 +2,6 @@ set(SIMULATION_LINK_LIBRARIES PositionBasedDynamics Simulation Utils)
 set(SIMULATION_DEPENDENCIES PositionBasedDynamics Simulation Utils)
 
 
-set(SIMULATION_LINK_LIBRARIES
-  ${SIMULATION_LINK_LIBRARIES}
-)
-
 ############################################################
 # GenericParameters
 ############################################################
@@ -14,12 +10,22 @@ if(TARGET Ext_GenericParameters)
 	set(SIMULATION_DEPENDENCIES ${SIMULATION_DEPENDENCIES} Ext_GenericParameters)
 endif()
 
-add_executable(BarDemo
-	  main.cpp     
-    # ${VIZ_FILES}
-    ${PROJECT_PATH}/Common/Common.h
+
+# add_executable(BarDemo
+# 	  main.cpp     
+#     # ${VIZ_FILES}
+#     ${PROJECT_PATH}/Common/Common.h
 	  
-	  CMakeLists.txt
+# 	  CMakeLists.txt
+# )
+
+add_library(BarDemo
+    bar_sim.h
+    helpers.hpp
+    main.cpp
+    ${PROJECT_PATH}/Common/Common.h
+
+    CMakeLists.txt
 )
 
 add_definitions(-DTW_NO_LIB_PRAGMA -DTW_STATIC)

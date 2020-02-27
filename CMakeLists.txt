@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(PositionBasedDynamics)
 
 # ignore eigen errors
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-ignored-attributes -Wmaybe-uninitialized")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-ignored-attributes")
 set(CMAKE_BUILD_TYPE Release)
 
 set(PROJECT_PATH ${PROJECT_SOURCE_DIR})
@@ -72,9 +72,15 @@ else()
 	unset(INSTALL_DIR)
 endif()
 
+find_package(catkin REQUIRED)
+
 add_subdirectory(PositionBasedDynamics)
 add_subdirectory(Simulation)
 add_subdirectory(Utils)
+catkin_package(
+   INCLUDE_DIRS ./Demos/BarDemo . 
+   LIBRARIES BarDemo
+)
 if (NOT PBD_NO_DEMOS)
 	if (WIN32)
 		add_subdirectory(extern/freeglut)
