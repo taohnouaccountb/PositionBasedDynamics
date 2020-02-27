@@ -157,7 +157,7 @@ void TetModel::attachVisMesh(const ParticleData &pd)
 			}
 			if (curT[0] == -1)
 			{
-				LOG_ERR << "ERROR: vertex has no nearest triangle.";
+				std::cout << "ERROR: vertex has no nearest triangle." << std::endl;
 				continue;
 			}
 
