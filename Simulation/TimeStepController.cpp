@@ -4,7 +4,7 @@
 #include "PositionBasedDynamics/TimeIntegration.h"
 #include <iostream>
 #include "PositionBasedDynamics/PositionBasedDynamics.h"
-// #include "Utils/Timing.h"
+#include "Utils/Timing.h"
 
 using namespace PBD;
 using namespace std;
@@ -67,7 +67,7 @@ void TimeStepController::initParameters()
 
 void TimeStepController::step(SimulationModel &model)
 {
-	// START_TIMING("simulation step");
+	START_TIMING("simulation step");
 	TimeManager *tm = TimeManager::getCurrent ();
 	const Real h = tm->getTimeStepSize();
  
@@ -117,9 +117,9 @@ void TimeStepController::step(SimulationModel &model)
 		}
 	}
 
-	// START_TIMING("position constraints projection");
+	START_TIMING("position constraints projection");
 	positionConstraintProjection(model);
-	// STOP_TIMING_AVG;
+	STOP_TIMING_AVG;
 
 	#pragma omp parallel if(numBodies > MIN_PARALLEL_SIZE) default(shared)
 	{
@@ -165,9 +165,9 @@ void TimeStepController::step(SimulationModel &model)
 
 	if (m_collisionDetection)
 	{
-		// START_TIMING("collision detection");
+		START_TIMING("collision detection");
 		m_collisionDetection->collisionDetection(model);
-		// STOP_TIMING_AVG;
+		STOP_TIMING_AVG;
 	}
 
 	velocityConstraintProjection(model);
@@ -214,7 +214,7 @@ void TimeStepController::step(SimulationModel &model)
 	
 	// compute new time	
 	tm->setTime (tm->getTime () + h);
-	// STOP_TIMING_AVG;
+	STOP_TIMING_AVG;
 }
 
 void TimeStepController::reset()

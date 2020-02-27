@@ -1,6 +1,6 @@
 #include "Simulation.h"
 #include "TimeManager.h"
-// #include "Utils/Timing.h"
+#include "Utils/Timing.h"
 #include "TimeStep.h"
 #include "TimeStepController.h"
 
@@ -109,11 +109,11 @@ void Simulation::setSimulationMethod(const int val)
 	}
 	else if (method == SimulationMethods::XPBD)
 	{
-		// LOG_INFO << "XPBD not implemented yet.";
+		LOG_INFO << "XPBD not implemented yet.";
 	}
 	else if (method == SimulationMethods::IBDS)
 	{
-		// LOG_INFO << "IBDS not implemented yet.";
+		LOG_INFO << "IBDS not implemented yet.";
 	}	
 
 	if (m_simulationMethodChanged != nullptr)
